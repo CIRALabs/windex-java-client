@@ -1,35 +1,8 @@
 # windex-client
 
-## Requirements
-
-Building the API client library requires [Maven](https://maven.apache.org/) to be installed.
-
-## Installation & Usage
-
-To install the API client library to your local Maven repository, simply execute:
-
-```shell
-mvn install
+This client has been generated using [openapi-generator](https://github.com/OpenAPITools/openapi-generator), using the following command:
 ```
-
-To deploy it to a remote Maven repository instead, configure the settings of the repository and execute:
-
-```shell
-mvn deploy
-```
-
-Refer to the [official documentation](https://maven.apache.org/plugins/maven-deploy-plugin/usage.html) for more information.
-
-After the client library is installed/deployed, you can use it in your Maven project by adding the following to your *pom.xml*:
-
-```xml
-<dependency>
-    <groupId>ca.cira.shg</groupId>
-    <artifactId>windex-client</artifactId>
-    <version>1.0.0-current</version>
-    <scope>compile</scope>
-</dependency>
-
+openapi-generator-cli generate -i swagger.yml -o ../../windex-java-client --library retrofit2 -g java --artifact-id windex-client --group-id ca.cira.shg --package-name ca.cira.shg.windex --model-package ca.cira.shg.windex.model --api-package ca.cira.shg.windex.client
 ```
 
 ## Author
