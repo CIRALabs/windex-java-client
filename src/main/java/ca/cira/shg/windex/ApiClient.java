@@ -2,21 +2,15 @@ package ca.cira.shg.windex;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonElement;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import org.apache.oltu.oauth2.client.request.OAuthClientRequest.AuthenticationRequestBuilder;
-import org.apache.oltu.oauth2.client.request.OAuthClientRequest.TokenRequestBuilder;
 import org.threeten.bp.format.DateTimeFormatter;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
-import ca.cira.shg.windex.auth.HttpBasicAuth;
-import ca.cira.shg.windex.auth.HttpBearerAuth;
-import ca.cira.shg.windex.auth.ApiKeyAuth;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -24,7 +18,6 @@ import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.HashMap;
 
 public class ApiClient {
 
@@ -36,42 +29,6 @@ public class ApiClient {
   public ApiClient() {
     apiAuthorizations = new LinkedHashMap<String, Interceptor>();
     createDefaultAdapter();
-  }
-
-  public ApiClient(String[] authNames) {
-    this();
-    for(String authName : authNames) {
-      throw new RuntimeException("auth name \"" + authName + "\" not found in available auth names");
-    }
-  }
-
-  /**
-   * Basic constructor for single auth name
-   * @param authName Authentication name
-   */
-  public ApiClient(String authName) {
-    this(new String[]{authName});
-  }
-
-  /**
-   * Helper constructor for single api key
-   * @param authName Authentication name
-   * @param apiKey API key
-   */
-  public ApiClient(String authName, String apiKey) {
-    this(authName);
-    this.setApiKey(apiKey);
-  }
-
-  /**
-   * Helper constructor for single basic auth or password oauth2
-   * @param authName Authentication name
-   * @param username Username
-   * @param password Password
-   */
-  public ApiClient(String authName, String username, String password) {
-    this(authName);
-    this.setCredentials(username,  password);
   }
 
   public void createDefaultAdapter() {
@@ -118,52 +75,6 @@ public class ApiClient {
 
 
   /**
-   * Helper method to configure the first api key found
-   * @param apiKey API key
-   * @return ApiClient
-   */
-  public ApiClient setApiKey(String apiKey) {
-    for(Interceptor apiAuthorization : apiAuthorizations.values()) {
-      if (apiAuthorization instanceof ApiKeyAuth) {
-        ApiKeyAuth keyAuth = (ApiKeyAuth) apiAuthorization;
-        keyAuth.setApiKey(apiKey);
-        return this;
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Helper method to set token for the first Http Bearer authentication found.
-   * @param bearerToken Bearer token
-   * @return ApiClient
-   */
-  public ApiClient setBearerToken(String bearerToken) {
-    for (Interceptor apiAuthorization : apiAuthorizations.values()) {
-      if (apiAuthorization instanceof HttpBearerAuth) {
-        ((HttpBearerAuth) apiAuthorization).setBearerToken(bearerToken);
-        return this;
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Helper method to configure the username/password for basic auth or password oauth
-   * @param username Username
-   * @param password Password
-   * @return ApiClient
-   */
-  public ApiClient setCredentials(String username, String password) {
-    for(Interceptor apiAuthorization : apiAuthorizations.values()) {
-      if (apiAuthorization instanceof HttpBasicAuth) {
-        HttpBasicAuth basicAuth = (HttpBasicAuth) apiAuthorization;
-        basicAuth.setCredentials(username, password);
-        return this;
-      }
-    }
-    return this;
-  }
 
 
   /**
