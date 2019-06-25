@@ -22,7 +22,7 @@ public class DeviceApiTest {
 
     @Before
     public void setup() {
-        api = new ApiClient().createService(DeviceApi.class);
+        api = new ApiClient("https://localhost:8443").createService(DeviceApi.class);
     }
 
     /**

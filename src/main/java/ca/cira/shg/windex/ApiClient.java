@@ -26,16 +26,15 @@ public class ApiClient {
   private Retrofit.Builder adapterBuilder;
   private JSON json;
 
-  public ApiClient() {
+  public ApiClient(String baseUrl) {
     apiAuthorizations = new LinkedHashMap<String, Interceptor>();
-    createDefaultAdapter();
+    createDefaultAdapter(baseUrl);
   }
 
-  public void createDefaultAdapter() {
+  public void createDefaultAdapter(String baseUrl) {
     json = new JSON();
     okBuilder = new OkHttpClient.Builder();
 
-    String baseUrl = "https://mud.nXXXXXX.router.securehomegateway.ca/api/1.0";
     if (!baseUrl.endsWith("/"))
       baseUrl = baseUrl + "/";
 
