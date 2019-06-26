@@ -1,17 +1,16 @@
 package ca.cira.shg.windex.client;
 
 import ca.cira.shg.windex.ApiClient;
-import ca.cira.shg.windex.model.InlineResponse2001;
-import ca.cira.shg.windex.model.ModelApiResponse;
-import ca.cira.shg.windex.model.User;
 import ca.cira.shg.windex.model.UserBody;
+import okhttp3.tls.HeldCertificate;
 import org.junit.Before;
 import org.junit.Test;
+import retrofit2.Response;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * API tests for UserApi
@@ -19,10 +18,17 @@ import java.util.Map;
 public class UserApiTest {
 
     private UserApi api;
+    private HeldCertificate certificate;
 
     @Before
     public void setup() {
-        api = new ApiClient("https://localhost:8443").createService(UserApi.class);
+        // Generate a client certificate
+        certificate = new HeldCertificate.Builder()
+                .commonName("shg-client")
+                .build();
+        ApiClient client = new ApiClient("https://127.0.0.1:8443");
+        client.setClientCertificate(certificate.keyPair(), certificate.certificate());
+        api = client.createService(UserApi.class, true);
     }
 
     /**
@@ -31,11 +37,12 @@ public class UserApiTest {
      * This can only be done by the logged in administrator or user.
      */
     @Test
-    public void createUserTest() {
-        UserBody userBody = null;
-        // api.createUser(userBody);
-
-        // TODO: test validations
+    public void createUserTest() throws IOException {
+        UserBody userBody = new UserBody();
+        userBody.name("New");
+        Response<Void> response = api.createUser(userBody).execute();
+        assertTrue(response.isSuccessful());
+        assertEquals(201, response.code());
     }
     /**
      * Get user by user id

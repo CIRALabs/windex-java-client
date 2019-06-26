@@ -6,15 +6,27 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import okhttp3.internal.platform.Platform;
+import okhttp3.tls.HandshakeCertificates;
+import okhttp3.tls.HeldCertificate;
 import org.threeten.bp.format.DateTimeFormatter;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.security.KeyManagementException;
+import java.security.KeyPair;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,10 +38,37 @@ public class ApiClient {
   private Retrofit.Builder adapterBuilder;
   private JSON json;
 
+  private HandshakeCertificates.Builder certificateBuilder;
+
   public ApiClient(String baseUrl) {
-    apiAuthorizations = new LinkedHashMap<String, Interceptor>();
+    apiAuthorizations = new LinkedHashMap<>();
+    certificateBuilder = new HandshakeCertificates.Builder();
+    certificateBuilder.addPlatformTrustedCertificates();
     createDefaultAdapter(baseUrl);
   }
+
+  private static X509TrustManager getTrustManager() {
+    try {
+      // Create a trust manager that does not validate certificate chains
+      return new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                }
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                  return new X509Certificate[]{};
+                }
+      };
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 
   public void createDefaultAdapter(String baseUrl) {
     json = new JSON();
@@ -46,6 +85,28 @@ public class ApiClient {
   }
 
   public <S> S createService(Class<S> serviceClass) {
+      return createService(serviceClass, false);
+  }
+
+  public <S> S createService(Class<S> serviceClass, boolean trustAllCerts) {
+    HandshakeCertificates certs = certificateBuilder.build();
+
+    if (trustAllCerts) {
+        X509TrustManager trustManager = getTrustManager();
+        SSLContext sslContext;
+        try {
+            sslContext = Platform.get().getSSLContext();
+            sslContext.init(new KeyManager[]{certs.keyManager()}, new TrustManager[]{trustManager},
+                            new SecureRandom());
+        } catch (KeyManagementException e) {
+            throw new AssertionError(e);
+        }
+
+        okBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
+        okBuilder.hostnameVerifier((hostname, session) -> true);
+    } else {
+        okBuilder.sslSocketFactory(certs.sslSocketFactory(), certs.trustManager());
+    }
     return adapterBuilder
       .client(okBuilder.build())
       .build()
@@ -127,6 +188,15 @@ public class ApiClient {
     this.okBuilder = okClient.newBuilder();
     addAuthsToOkBuilder(this.okBuilder);
   }
+
+  public void setClientCertificate(KeyPair keyPair, X509Certificate certificate) {
+    certificateBuilder.heldCertificate(new HeldCertificate(keyPair, certificate));
+  }
+
+  public void setServerCertificate(X509Certificate certificate) {
+    certificateBuilder.addTrustedCertificate(certificate);
+  }
+
 }
 
 /**
