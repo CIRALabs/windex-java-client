@@ -39,7 +39,7 @@ public class UserApiTest {
     @Test
     public void createUserTest() throws IOException {
         UserBody userBody = new UserBody();
-        userBody.name("New");
+        userBody.name("My user");
         Response<Void> response = api.createUser(userBody).execute();
         assertTrue(response.isSuccessful());
         assertEquals(201, response.code());
